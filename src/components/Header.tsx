@@ -3,15 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, LayoutGrid, Folder, Unplug, LogOut, UserPen } from "lucide-react";
+import { Calculator, LayoutGrid, Folder, Unplug, LogOut, UserPen, Layers } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useRef, useEffect } from "react";
 
 const navItems = [
+  { label: "Geral", href: "/dashboard/geral", icon: LayoutGrid },
   { label: "Calculadora", href: "/dashboard/calculadora", icon: Calculator },
-  { label: "Empresas", href: "/dashboard/empresas", icon: LayoutGrid,},
+  { label: "Empresas", href: "/dashboard/empresas", icon: Layers,},
   { label: "Pastas", href: "/dashboard/pastas", icon: Folder },
   { label: "Integrações", href: "/dashboard/integracoes", icon: Unplug },
 ];
@@ -42,7 +43,7 @@ export default function Header() {
   return (
     <div className="flex w-full items-center justify-between relative px-6 py-4">
 
-      <Link href="/dashboard/calculadora" className="flex items-center h-16">
+      <Link href="/dashboard/geral" className="flex items-center h-16">
         <Image
           src="/logo2-prospectiq.png"
           alt="Prospect IQ"

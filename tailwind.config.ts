@@ -19,7 +19,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-      sans: ["Inter", ...defaultTheme.fontFamily.sans],
+      sans: ["Inter",'sans-serif', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         border: "hsl(var(--border))",
