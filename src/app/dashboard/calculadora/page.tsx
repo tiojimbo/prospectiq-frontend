@@ -138,8 +138,23 @@ const handleChange = (index: number, key: 'field' | 'value' | 'condition', newVa
   setFilters(newFilters);
 };
 
-
 const filterRef = useRef<HTMLDivElement>(null)
+
+useEffect(() => {
+  function handleClickOutside(event: MouseEvent) {
+    if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+      setShowFilters(false)
+    }
+  }
+
+  if (showFilters) {
+    document.addEventListener('mousedown', handleClickOutside)
+  }
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside)
+  }
+}, [showFilters])
 
   return (
     <AnimatedPage>
@@ -159,7 +174,7 @@ const filterRef = useRef<HTMLDivElement>(null)
         </div>
       </div>
       <div className="flex gap-2">
-        <Popover>
+        <Popover open={showFilters} onOpenChange={setShowFilters}>
   <PopoverTrigger asChild>
     <Button
       variant="outline"

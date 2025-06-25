@@ -121,3 +121,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-state="open"] > .fixed.inset-0 {
+  background-color: transparent !important;
+  pointer-events: none;
+}
+
+@layer utilities {
+  .sheet-overlay {
+    background-color: transparent !important;
+    pointer-events: none !important;
+  }
+}
