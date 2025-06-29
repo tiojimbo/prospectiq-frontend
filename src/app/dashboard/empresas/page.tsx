@@ -38,12 +38,13 @@ import {
 } from "@/components/ui/sheet"
 
 import { Table as TableIcon, CircleDashed } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import { Button } from "@/components/ui/button"
 import { MoreVertical } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
+import { getEmpresasComFiltros } from '@/hooks/api';
+import { Filter } from '@/types/filters'
 
 /* ----------------------------- Tipo da Empresa ----------------------------- */
 type Empresa = {
@@ -106,6 +107,8 @@ function DataTable({
   columns: ColumnDef<Empresa>[]
   data: Empresa[]
 }) {
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null);
+  const [isSheetAberto, setIsSheetAberto] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -371,18 +374,44 @@ const abrirDetalhesEmpresa = (empresa: Empresa) => {
 }
 
 export default function EmpresasPage() {
-  const empresas: Empresa[] = Array.from({ length: 50 }, (_, i) => ({
-    id: `id-${i}`,
-    nomeFantasia: `Empresa ${i + 1}`,
-    cnpj: '00.000.000/0001-00',
-    endereco: 'Av. Exemplo, 123 - SP',
-    setor: 'Tecnologia',
-    porte: 'de 10 a 50',
-  }))
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+useEffect(() => {
+  setIsClient(true);
+}, []);
+
+  useEffect(() => {
+    const filtrosSalvos = localStorage.getItem('prospectiq_filtros');
+    if (!filtrosSalvos) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const filtros = JSON.parse(filtrosSalvos) as Filter[];
+      const filtroValido = filtros.some((f) => f.value);
+      if (!filtroValido) {
+        setLoading(false);
+        return;
+      }
+
+      getEmpresasComFiltros(filtros)
+        .then((data) => setEmpresas(data))
+        .catch((err) => console.error('Erro ao carregar empresas:', err))
+        .finally(() => setLoading(false));
+    } catch (error) {
+      console.error('Erro ao parsear filtros:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  if (!isClient) return null;
 
   return (
     <AnimatedPage>
-    <div className="p-6 font-sans bg-[#F3F5F9] min-h-screen space-y-6">
+      <div className="p-6 font-sans bg-[#F3F5F9] min-h-screen space-y-6">
         {/* Cabeçalho */}
         <div className="flex items-start gap-4">
           <div className="bg-[#8332FF1A] p-2 rounded-md">
@@ -398,14 +427,17 @@ export default function EmpresasPage() {
 
         {/* Tabela */}
         <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardContent className="p-0">
-          <DataTable columns={empresaColumns} data={empresas} />
-        </CardContent>
-      </Card>
+          <CardContent className="p-0">
+            {!loading ? (
+              <DataTable columns={empresaColumns} data={empresas} />
+            ) : (
+              <div className="text-center py-12 text-sm text-muted-foreground">
+                Carregando empresas...
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-
-      
     </AnimatedPage>
-    
   );
 }

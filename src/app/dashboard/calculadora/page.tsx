@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 import { useRef, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ScrollArea } from "@/components/ui/scroll-area"
-
+import { useTotalEmpresas } from '@/hooks/api'
 
 
 interface MetricCardProps {
@@ -96,23 +96,47 @@ const setoresData = [
 ]
 
 
-export default function CalculadoraPage() {
+export default function CalculadoraPage() {      
   const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<Filter[]>([
-  { field: 'Estado', condition: 'É', value: '' },
-])
+  const [filters, setFilters] = useState<Filter[]>([]);
+  const [loadingFilters, setLoadingFilters] = useState(true);
 
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+
+  const filtrosSalvos = localStorage.getItem('prospectiq_filtros');
+  if (filtrosSalvos) {
+    try {
+      const parsed = JSON.parse(filtrosSalvos);
+      if (Array.isArray(parsed)) {
+        setFilters(parsed);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar filtros salvos:', err);
+    }
+  }
+  setLoadingFilters(false);
+}, []);
+
+
+
+const getFiltroValor = (campo: string): string | undefined => {
+  const filtro = filters.find(f => f.field === campo && f.condition === 'É')
+  return filtro?.value || undefined
+}
+
+const uf = getFiltroValor('Estado')
+const municipio = getFiltroValor('Cidade')
+const cnae = getFiltroValor('Setor')
+const { data, loading, error } = useTotalEmpresas({ uf, municipio, cnae })
 
 const clearAllFilters = () => {
   setFilters([]);
-};
-
-const estados = ['SP', 'RJ', 'MG', 'RS', 'PR', 'BA', 'PE'] // exemplo
-const cidadesPorEstado = {
-  SP: ['São Paulo', 'Campinas', 'Santos'],
-  RJ: ['Rio de Janeiro', 'Niterói'],
-  MG: ['Belo Horizonte', 'Uberlândia'],
+  if (typeof window !== 'undefined') {
+  localStorage.setItem('prospectiq_filtros', JSON.stringify([]));
 }
+  
+};
 
 const handleAddFilter = () => {
   setFilters([...filters, { field: '', condition: 'É', value: '' }])
@@ -121,6 +145,10 @@ const handleAddFilter = () => {
 const handleRemoveFilter = (index: number) => {
   const newFilters = filters.filter((_, i) => i !== index)
   setFilters(newFilters)
+ if (typeof window !== 'undefined') {
+  localStorage.setItem('prospectiq_filtros', JSON.stringify(newFilters));
+}
+
 }
 
 const handleChange = (index: number, key: 'field' | 'value' | 'condition', newValue: string) => {
@@ -136,25 +164,13 @@ const handleChange = (index: number, key: 'field' | 'value' | 'condition', newVa
   }
 
   setFilters(newFilters);
+  if (typeof window !== 'undefined') {
+  localStorage.setItem('prospectiq_filtros', JSON.stringify(newFilters));
+}
+
 };
 
 const filterRef = useRef<HTMLDivElement>(null)
-
-useEffect(() => {
-  function handleClickOutside(event: MouseEvent) {
-    if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-      setShowFilters(false)
-    }
-  }
-
-  if (showFilters) {
-    document.addEventListener('mousedown', handleClickOutside)
-  }
-
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside)
-  }
-}, [showFilters])
 
   return (
     <AnimatedPage>
@@ -174,7 +190,8 @@ useEffect(() => {
         </div>
       </div>
       <div className="flex gap-2">
-        <Popover open={showFilters} onOpenChange={setShowFilters}>
+
+    <Popover>
   <PopoverTrigger asChild>
     <Button
       variant="outline"
@@ -213,7 +230,7 @@ useEffect(() => {
               <CommandInput placeholder="Buscar filtro..." />
               <CommandEmpty>Nenhum filtro encontrado.</CommandEmpty>
               <CommandGroup>
-                {['Estado', 'Cidade', 'Setor', 'Porte'].map((item) => (
+                {['Estado', 'Setor', 'Porte'].map((item) => (
                   <CommandItem
                     key={item}
                     value={item}
@@ -256,9 +273,33 @@ useEffect(() => {
             <SelectValue placeholder="Selecionar valor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="SP">SP</SelectItem>
-            <SelectItem value="RJ">RJ</SelectItem>
+            <SelectItem value="AC">AC</SelectItem>
+            <SelectItem value="AL">AL</SelectItem>
+            <SelectItem value="AM">AM</SelectItem>
+            <SelectItem value="AP">AP</SelectItem>
+            <SelectItem value="BA">BA</SelectItem>
+            <SelectItem value="CE">CE</SelectItem>
+            <SelectItem value="DF">DF</SelectItem>
+            <SelectItem value="ES">ES</SelectItem>
+            <SelectItem value="GO">GO</SelectItem>
+            <SelectItem value="MA">MA</SelectItem>
             <SelectItem value="MG">MG</SelectItem>
+            <SelectItem value="MS">MS</SelectItem>
+            <SelectItem value="MT">MT</SelectItem>
+            <SelectItem value="PA">PA</SelectItem>
+            <SelectItem value="PB">PB</SelectItem>
+            <SelectItem value="PI">PI</SelectItem>
+            <SelectItem value="PR">PR</SelectItem>
+            <SelectItem value="RJ">RJ</SelectItem>
+            <SelectItem value="RN">RN</SelectItem>
+            <SelectItem value="RO">RO</SelectItem>
+            <SelectItem value="RR">RR</SelectItem>
+            <SelectItem value="RS">RS</SelectItem>
+            <SelectItem value="RR">RR</SelectItem>
+            <SelectItem value="SC">SC</SelectItem>
+            <SelectItem value="SE">SE</SelectItem>
+            <SelectItem value="SP">SP</SelectItem>
+            <SelectItem value="TO">TO</SelectItem>
           </SelectContent>
         </Select>
 
@@ -288,7 +329,16 @@ useEffect(() => {
         {/* Cards de métricas */}
         <div className="flex gap-4 flex-wrap">
   <div className="w-[280px]">
-    <MetricCard title="Empresas" value="23.708.508" />
+      <MetricCard
+      title="Empresas"
+      value={
+        loading
+          ? '...'
+          : error
+          ? 'Erro'
+          : data?.totalEmpresas.toLocaleString('pt-BR') ?? '0'
+      }
+      />
   </div>
   <div className="w-[280px]">
     <MetricCard title="Faturamento Anual" value="R$ 152 Trilhões" />
@@ -296,10 +346,26 @@ useEffect(() => {
 </div>
         {/* Layout principal com mapa e tabelas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-  <DataTable title="Cidades" data={cidadesData} />
-  <DataTable title="Setores" data={setoresData} />
-</div>
+            <DataTable
+              title="Cidades"
+              data={
+                data?.rankingCidades.map(c => ({
+                  name: c.nome, // ✅ correto (agora o backend envia .nome)
+                  value: c.total.toLocaleString('pt-BR')
+                })) || []
+              }
+            />
+              <DataTable
+                title="Setores"
+                data={
+                  data?.rankingSetores.map(s => ({
+                    name: s.nome, // ✅ correto
+                    value: s.total.toLocaleString('pt-BR')
+                  })) || []
+                }
+              />
 
+          </div>
       </div>
     </div>
     </AnimatedPage>
