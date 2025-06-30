@@ -382,31 +382,6 @@ useEffect(() => {
   setIsClient(true);
 }, []);
 
-  useEffect(() => {
-    const filtrosSalvos = localStorage.getItem('prospectiq_filtros');
-    if (!filtrosSalvos) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const filtros = JSON.parse(filtrosSalvos) as Filter[];
-      const filtroValido = filtros.some((f) => f.value);
-      if (!filtroValido) {
-        setLoading(false);
-        return;
-      }
-
-      getEmpresasComFiltros(filtros)
-        .then((data) => setEmpresas(data))
-        .catch((err) => console.error('Erro ao carregar empresas:', err))
-        .finally(() => setLoading(false));
-    } catch (error) {
-      console.error('Erro ao parsear filtros:', error);
-      setLoading(false);
-    }
-  }, []);
-
   if (!isClient) return null;
 
   return (
